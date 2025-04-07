@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caro AI - Meta vs ChatGPT</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            background-color: white;
+            display: block;
+            margin: auto;
+        }
+        #info {
+            margin-top: 10px;
+            font-size: 20px;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Caro AI - Meta vs ChatGPT</h1>
+<p>Chọn AI bạn muốn cược 100K:</p>
+<button onclick="placeBet('X')">Cược Meta AI (X)</button>
+<button onclick="placeBet('O')">Cược ChatGPT AI (O)</button>
+<p id="info">Số tiền của bạn: <span id="money">100000</span> VND</p>
+<canvas id="boardCanvas"></canvas>
+
+<script>
+const SIZE = 20; 
+const CELL_SIZE = 30;  
+const canvas = document.getElementById("boardCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = SIZE * CELL_SIZE;
+canvas.height = SIZE * CELL_SIZE;
+const board = Array(SIZE).fill().map(() => Array(SIZE).fill(""));
+let playerMoney = 100000;
+let playerBet = null;
+let turn = "X";
+
+function drawBoard() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "black";
+    for (let i = 0; i <= SIZE; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * CELL_SIZE, 0);
+        ctx.lineTo(i * CELL_SIZE, SIZE * CELL_SIZE);
+        ctx.moveTo(0, i * CELL_SIZE);
+        ctx.lineTo(SIZE * CELL_SIZE, i * CELL_SIZE);
+        ctx.stroke();
+    }
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === "X") {
+                ctx.strokeStyle = "red";
+                ctx.beginPath();
+                ctx.moveTo(c * CELL_SIZE + 5, r * CELL_SIZE + 5);
+                ctx.lineTo((c + 1) * CELL_SIZE - 5, (r + 1) * CELL_SIZE - 5);
+                ctx.moveTo((c + 1) * CELL_SIZE - 5, r * CELL_SIZE + 5);
+                ctx.lineTo(c * CELL_SIZE + 5, (r + 1) * CELL_SIZE - 5);
+                ctx.stroke();
+            } else if (board[r][c] === "O") {
+                ctx.strokeStyle = "blue";
+                ctx.beginPath();
+                ctx.arc(c * CELL_SIZE + CELL_SIZE / 2, r * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+function checkWin(player) {
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c <= SIZE - 5; c++) {
+            if (board[r][c] === player && board[r][c + 1] === player && board[r][c + 2] === player &&
+                board[r][c + 3] === player && board[r][c + 4] === player) return true;
+        }
+    }
+    for (let r = 0; r <= SIZE - 5; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === player && board[r + 1][c] === player && board[r + 2][c] === player &&
+                board[r + 3][c] === player && board[r + 4][c] === player) return true;
+        }
+    }
+    for (let r = 0; r <= SIZE - 5; r++) {
+        for (let c = 0; c <= SIZE - 5; c++) {
+            if (board[r][c] === player && board[r + 1][c + 1] === player && board[r + 2][c + 2] === player &&
+                board[r + 3][c + 3] === player && board[r + 4][c + 4] === player) return true;
+            if (board[r + 4][c] === player && board[r + 3][c + 1] === player && board[r + 2][c + 2] === player &&
+                board[r + 1][c + 3] === player && board[r][c + 4] === player) return true;
+        }
+    }
+    return false;
+}
+
+function bestMove(player) {
+    let bestMoves = [];
+    let emptyCells = [];
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (board[r][c] === "") {
+                emptyCells.push([r, c]);
+                board[r][c] = player;
+                if (checkWin(player)) bestMoves.push([r, c]);
+                board[r][c] = "";
+            }
+        }
+    }
+    return bestMoves.length ? bestMoves[Math.floor(Math.random() * bestMoves.length)] : emptyCells[Math.floor(Math.random() * emptyCells.length)];
+}
+
+function makeMove() {
+    setTimeout(() => {
+        let [r, c] = bestMove(turn);
+        board[r][c] = turn;
+        drawBoard();
+        if (checkWin(turn)) {
+            setTimeout(() => {
+                alert(`AI ${turn} thắng!`);
+                if (playerBet === turn) playerMoney += 200000;
+                else playerMoney -= 100000;
+                document.getElementById("money").innerText = playerMoney;
+                resetGame();
+            }, 500);
+            return;
+        }
+        turn = turn === "X" ? "O" : "X";
+        makeMove();
+    }, 2000);
+}
+
+function placeBet(ai) {
+    playerBet = ai;
+    playerMoney -= 100000;
+    document.getElementById("money").innerText = playerMoney;
+    setTimeout(makeMove, 1000);
+}
+
+function resetGame() {
+    board.forEach(row => row.fill(""));
+    drawBoard();
+}
+
+drawBoard();
+</script>
+
+</body>
+</html>
